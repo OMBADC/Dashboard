@@ -1,0 +1,1651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>OMBADC — Project Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+/* ═══════════════════════════════════════
+   RESET & TOKENS
+═══════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --navy:    #0b1f38;
+  --navy2:   #122944;
+  --blue:    #1460aa;
+  --sky:     #2d8bdf;
+  --teal:    #0b9b8a;
+  --green:   #1a8f5a;
+  --amber:   #c07d10;
+  --red:     #c93030;
+  --slate:   #94a3b8;
+  --bg:      #f1f5fa;
+  --card:    #ffffff;
+  --border:  #dde4ef;
+  --text:    #0b1f38;
+  --muted:   #607898;
+  --sans:    'IBM Plex Sans',sans-serif;
+  --display: 'Syne',sans-serif;
+  --mono:    'IBM Plex Mono',monospace;
+  --sidebar: 224px;
+  --ease:    cubic-bezier(.4,0,.2,1);
+}
+
+html,body{height:100%;overflow:hidden;}
+body{display:flex;font-family:var(--sans);background:var(--bg);color:var(--text);font-size:13px;}
+
+/* ═══════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════ */
+.sidebar{
+  width:var(--sidebar);flex-shrink:0;
+  background:var(--navy);
+  display:flex;flex-direction:column;
+  padding:0;overflow:hidden;
+  position:relative;z-index:10;
+}
+.sidebar::after{
+  content:'';position:absolute;top:0;right:0;bottom:0;width:1px;
+  background:linear-gradient(to bottom,transparent,rgba(255,255,255,.08),transparent);
+}
+.brand{
+  padding:24px 20px 20px;
+  border-bottom:1px solid rgba(255,255,255,.07);
+}
+.brand-tag{
+  font-family:var(--mono);font-size:9px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--sky);opacity:.8;margin-bottom:6px;
+}
+.brand-name{
+  font-family:var(--display);font-size:17px;font-weight:700;
+  color:#fff;line-height:1.25;
+}
+
+.nav{flex:1;padding:16px 0;overflow-y:auto;}
+.nav-section{
+  font-family:var(--mono);font-size:9px;letter-spacing:.13em;
+  text-transform:uppercase;color:rgba(255,255,255,.3);
+  padding:12px 20px 6px;
+}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 20px;cursor:pointer;
+  color:rgba(255,255,255,.55);font-size:12.5px;font-weight:400;
+  transition:all .2s var(--ease);position:relative;
+  border-left:2px solid transparent;
+}
+.nav-item:hover{
+  background:rgba(255,255,255,.05);
+  color:rgba(255,255,255,.9);
+}
+.nav-item.active{
+  color:#fff;background:rgba(45,139,223,.15);
+  border-left-color:var(--sky);font-weight:500;
+}
+.nav-icon{
+  width:18px;height:18px;opacity:.7;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:14px;
+}
+.nav-item.active .nav-icon{opacity:1;}
+
+.sidebar-footer{
+  padding:16px 20px;border-top:1px solid rgba(255,255,255,.07);
+}
+.sidebar-footer-text{
+  font-family:var(--mono);font-size:9px;color:rgba(255,255,255,.25);
+  line-height:1.6;
+}
+
+/* ═══════════════════════════════════════
+   MAIN CONTENT
+═══════════════════════════════════════ */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+
+.topbar{
+  background:var(--card);border-bottom:1px solid var(--border);
+  padding:0 28px;height:52px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.page-title{
+  font-family:var(--display);font-size:16px;font-weight:700;color:var(--navy);
+}
+.topbar-right{
+  display:flex;align-items:center;gap:16px;
+}
+.topbar-badge{
+  font-family:var(--mono);font-size:10px;
+  background:var(--bg);border:1px solid var(--border);
+  color:var(--muted);padding:4px 10px;border-radius:20px;
+}
+.topbar-date{font-family:var(--mono);font-size:10px;color:var(--muted);}
+
+.content{flex:1;overflow-y:auto;padding:24px 28px;}
+
+/* ═══════════════════════════════════════
+   PAGE SYSTEM
+═══════════════════════════════════════ */
+.page{display:none;}
+.page.active{display:block;animation:fadeUp .35s var(--ease);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+/* ═══════════════════════════════════════
+   KPI STRIP
+═══════════════════════════════════════ */
+.kpi-strip{
+  display:grid;gap:14px;margin-bottom:20px;
+}
+.kpi-strip-5{grid-template-columns:repeat(5,minmax(0,1fr));}
+.kpi-strip-4{grid-template-columns:repeat(4,minmax(0,1fr));}
+.kpi{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:16px 18px;
+  position:relative;overflow:hidden;
+  transition:box-shadow .2s;
+}
+.kpi:hover{box-shadow:0 4px 20px rgba(0,0,0,.08);}
+.kpi-accent{
+  position:absolute;top:0;left:0;right:0;height:3px;
+  border-radius:12px 12px 0 0;
+  background:var(--kpi-color,var(--blue));
+}
+.kpi-label{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:8px;
+}
+.kpi-value{
+  font-family:var(--display);font-size:24px;font-weight:800;
+  color:var(--navy);line-height:1;margin-bottom:4px;
+}
+.kpi-sub{font-size:10.5px;color:var(--muted);}
+
+/* ═══════════════════════════════════════
+   GRID LAYOUTS
+═══════════════════════════════════════ */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.grid-3{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:16px;margin-bottom:16px;}
+.grid-21{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;}
+.grid-12{display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:16px;}
+.col-span-2{grid-column:span 2;}
+
+/* ═══════════════════════════════════════
+   CARDS
+═══════════════════════════════════════ */
+.card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:18px 20px;
+}
+.card-title{
+  font-family:var(--display);font-size:13px;font-weight:700;
+  color:var(--navy);margin-bottom:4px;
+}
+.card-sub{
+  font-size:10.5px;color:var(--muted);margin-bottom:14px;
+  font-family:var(--mono);
+}
+.chart-wrap{position:relative;width:100%;}
+
+/* ═══════════════════════════════════════
+   LEGEND
+═══════════════════════════════════════ */
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--muted);}
+.ldot{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
+
+/* ═══════════════════════════════════════
+   DATA TABLE
+═══════════════════════════════════════ */
+.data-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;font-size:11.5px;}
+thead tr{background:var(--navy);}
+th{
+  text-align:left;padding:10px 12px;
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;
+  text-transform:uppercase;color:rgba(255,255,255,.7);
+  white-space:nowrap;font-weight:500;
+}
+td{
+  padding:9px 12px;color:var(--text);
+  border-bottom:1px solid var(--border);
+  vertical-align:middle;
+}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#f8faff;}
+
+/* ═══════════════════════════════════════
+   PILLS & BADGES
+═══════════════════════════════════════ */
+.pill{
+  display:inline-flex;align-items:center;
+  font-family:var(--mono);font-size:9.5px;
+  padding:2px 8px;border-radius:20px;white-space:nowrap;
+}
+.pill-ongoing  {background:#dbeafe;color:#1d4ed8;}
+.pill-completed{background:#d1fae5;color:#065f46;}
+.pill-delayed  {background:#fee2e2;color:#991b1b;}
+
+/* ═══════════════════════════════════════
+   PROGRESS BAR INLINE
+═══════════════════════════════════════ */
+.prog-wrap{display:flex;align-items:center;gap:7px;}
+.prog-track{flex:1;height:6px;background:#eef2f9;border-radius:3px;min-width:60px;}
+.prog-fill{height:100%;border-radius:3px;}
+.prog-val{font-family:var(--mono);font-size:10px;color:var(--muted);min-width:30px;text-align:right;}
+
+/* ═══════════════════════════════════════
+   HORIZONTAL SECTOR BARS (custom)
+═══════════════════════════════════════ */
+.hbar-row{
+  display:grid;grid-template-columns:160px 1fr 80px;
+  align-items:center;gap:10px;padding:6px 0;
+  border-bottom:1px solid var(--border);
+}
+.hbar-row:last-child{border-bottom:none;}
+.hbar-label{font-size:11.5px;color:var(--text);}
+.hbar-track{height:10px;background:#eef2f9;border-radius:5px;overflow:hidden;}
+.hbar-fill{height:100%;border-radius:5px;}
+.hbar-val{font-family:var(--mono);font-size:10px;color:var(--muted);text-align:right;}
+
+/* ═══════════════════════════════════════
+   SEARCH / FILTER
+═══════════════════════════════════════ */
+.filter-bar{
+  display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;
+}
+.filter-input{
+  flex:1;min-width:200px;max-width:320px;
+  padding:7px 12px;border:1px solid var(--border);border-radius:8px;
+  font-family:var(--sans);font-size:12px;color:var(--text);
+  background:var(--card);outline:none;
+}
+.filter-input:focus{border-color:var(--sky);}
+.filter-select{
+  padding:7px 12px;border:1px solid var(--border);border-radius:8px;
+  font-family:var(--sans);font-size:12px;color:var(--text);
+  background:var(--card);outline:none;cursor:pointer;
+}
+
+/* ═══════════════════════════════════════
+   SECTION DIVIDER
+═══════════════════════════════════════ */
+.section-head{
+  display:flex;align-items:center;gap:10px;
+  margin:20px 0 14px;
+}
+.section-head-line{flex:1;height:1px;background:var(--border);}
+.section-head-label{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);white-space:nowrap;
+}
+
+/* ═══════════════════════════════════════
+   FINANCIAL METER
+═══════════════════════════════════════ */
+.fin-meter{margin-bottom:16px;}
+.fin-meter-label{
+  display:flex;justify-content:space-between;
+  font-size:11px;color:var(--muted);margin-bottom:5px;
+}
+.fin-meter-track{height:12px;background:#eef2f9;border-radius:6px;overflow:hidden;position:relative;}
+.fin-meter-fill{height:100%;border-radius:6px;position:absolute;left:0;top:0;}
+.fin-meter-val{
+  font-family:var(--mono);font-size:10px;font-weight:500;
+  color:#fff;position:absolute;right:6px;top:50%;transform:translateY(-50%);
+}
+
+/* ═══════════════════════════════════════
+   STAT ROW
+═══════════════════════════════════════ */
+.stat-row{
+  display:flex;justify-content:space-between;align-items:baseline;
+  padding:7px 0;border-bottom:1px solid var(--border);
+}
+.stat-row:last-child{border-bottom:none;}
+.stat-key{font-size:11.5px;color:var(--muted);}
+.stat-val{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--navy);}
+
+/* ═══════════════════════════════════════
+   SUMMARY BANNER
+═══════════════════════════════════════ */
+.summary-banner{
+  background:linear-gradient(135deg,var(--navy) 0%,#1a3d6b 100%);
+  border-radius:14px;padding:22px 24px;margin-bottom:20px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:16px;
+}
+.banner-title{
+  font-family:var(--display);font-size:18px;font-weight:800;
+  color:#fff;margin-bottom:3px;
+}
+.banner-sub{font-size:11.5px;color:rgba(255,255,255,.55);}
+.banner-stats{display:flex;gap:28px;flex-wrap:wrap;}
+.banner-stat-val{
+  font-family:var(--display);font-size:22px;font-weight:800;color:#fff;
+}
+.banner-stat-label{font-size:10px;color:rgba(255,255,255,.5);font-family:var(--mono);margin-top:2px;}
+
+/* ═══════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════ */
+@media(max-width:900px){
+  .grid-3,.grid-21,.grid-12{grid-template-columns:1fr;}
+  .grid-2{grid-template-columns:1fr;}
+  .kpi-strip-5{grid-template-columns:repeat(2,1fr);}
+  .kpi-strip-4{grid-template-columns:repeat(2,1fr);}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     SIDEBAR
+══════════════════════════════════════ -->
+<nav class="sidebar">
+  <div class="brand">
+    <div class="brand-tag">OMBADC</div>
+    <div class="brand-name">Performance<br>Monitoring</div>
+  </div>
+
+  <div class="nav">
+    <div class="nav-section">Main</div>
+    <div class="nav-item active" onclick="showPage('overview',this)">
+      <div class="nav-icon">◈</div> Overview
+    </div>
+    <div class="nav-item" onclick="showPage('financial',this)">
+      <div class="nav-icon">₹</div> Financial
+    </div>
+    <div class="nav-item" onclick="showPage('physical',this)">
+      <div class="nav-icon">◉</div> Physical Progress
+    </div>
+    <div class="nav-item" onclick="showPage('sectors',this)">
+      <div class="nav-icon">▦</div> Sector Analysis
+    </div>
+    <div class="nav-item" onclick="showPage('departments',this)">
+      <div class="nav-icon">⊞</div> Departments
+    </div>
+    <div class="nav-item" onclick="showPage('beneficiaries',this)">
+      <div class="nav-icon">◎</div> Beneficiaries
+    </div>
+
+    <div class="nav-section">Projects</div>
+    <div class="nav-item" onclick="showPage('projects',this)">
+      <div class="nav-icon">≡</div> All Projects
+    </div>
+    <div class="nav-item" onclick="showPage('delayed',this)">
+      <div class="nav-icon">⚠</div> Delayed / At-Risk
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-footer-text">
+      Source: Phy_Fin_Data_Omb.xlsx<br>
+      60 Projects · 7 Sectors<br>
+      <span id="sidebarDate"></span>
+    </div>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════
+     MAIN
+══════════════════════════════════════ -->
+<div class="main">
+  <div class="topbar">
+    <div class="page-title" id="pageTitle">Overview</div>
+    <div class="topbar-right">
+      <div class="topbar-badge">60 Projects</div>
+      <div class="topbar-badge">₹17,483 Cr</div>
+      <div class="topbar-date" id="topbarDate"></div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ══════════════ PAGE: OVERVIEW ══════════════ -->
+    <div class="page active" id="page-overview">
+
+      <div class="summary-banner">
+        <div>
+          <div class="banner-title">OMBADC</div>
+          <div class="banner-sub">Physical &amp; Financial Monitoring Dashboard</div>
+        </div>
+        <div class="banner-stats">
+          <div>
+            <div class="banner-stat-val">60</div>
+            <div class="banner-stat-label">Total Projects</div>
+          </div>
+          <div>
+            <div class="banner-stat-val">7</div>
+            <div class="banner-stat-label">Sectors</div>
+          </div>
+          <div>
+            <div class="banner-stat-val">₹17,483 Cr</div>
+            <div class="banner-stat-label">Sanctioned</div>
+          </div>
+          <div>
+            <div class="banner-stat-val">40.47 L</div>
+            <div class="banner-stat-label">Beneficiaries</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-strip kpi-strip-5">
+        <div class="kpi"><div class="kpi-accent" style="--kpi-color:var(--blue)"></div>
+          <div class="kpi-label">Sanctioned</div>
+          <div class="kpi-value">₹17,483</div>
+          <div class="kpi-sub">Crores allocated</div>
+        </div>
+        <div class="kpi"><div class="kpi-accent" style="--kpi-color:var(--teal)"></div>
+          <div class="kpi-label">Expenditure</div>
+          <div class="kpi-value">₹11,708</div>
+          <div class="kpi-sub">67.0% utilised</div>
+        </div>
+        <div class="kpi"><div class="kpi-accent" style="--kpi-color:var(--green)"></div>
+          <div class="kpi-label">Released</div>
+          <div class="kpi-value">₹13,763</div>
+          <div class="kpi-sub">78.7% of sanctioned</div>
+        </div>
+        <div class="kpi"><div class="kpi-accent" style="--kpi-color:var(--amber)"></div>
+          <div class="kpi-label">Avg Progress</div>
+          <div class="kpi-value">67.6%</div>
+          <div class="kpi-sub">Physical completion</div>
+        </div>
+        <div class="kpi"><div class="kpi-accent" style="--kpi-color:#7c3aed)"></div>
+          <div class="kpi-label">Status Split</div>
+          <div class="kpi-value">43 / 17</div>
+          <div class="kpi-sub">Ongoing / Completed</div>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-title">Sanctioned vs Expenditure by Sector</div>
+          <div class="card-sub">Horizontal comparison · ₹ Crores</div>
+          <div class="legend">
+            <div class="legend-item"><div class="ldot" style="background:var(--blue)"></div>Sanctioned</div>
+            <div class="legend-item"><div class="ldot" style="background:var(--teal)"></div>Expenditure</div>
+          </div>
+          <div class="chart-wrap" style="height:260px">
+            <canvas id="ov-sectorBar"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Project Status</div>
+          <div class="card-sub">Ongoing vs Completed</div>
+          <div class="chart-wrap" style="height:180px">
+            <canvas id="ov-statusDonut"></canvas>
+          </div>
+          <div style="margin-top:12px">
+            <div class="stat-row"><span class="stat-key">Ongoing</span><span class="stat-val">43 <small style="color:var(--muted)">(72%)</small></span></div>
+            <div class="stat-row"><span class="stat-key">Completed</span><span class="stat-val">17 <small style="color:var(--muted)">(28%)</small></span></div>
+            <div class="stat-row"><span class="stat-key">Delayed / At-risk</span><span class="stat-val" style="color:var(--red)" id="delayedCount">—</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Avg Progress by Sector</div>
+          <div class="card-sub">Color: green ≥80% · blue 65–79% · amber &lt;65%</div>
+          <div class="chart-wrap" style="height:260px">
+            <canvas id="ov-progressBar"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Beneficiaries Distribution</div>
+          <div class="card-sub">People benefitted across sectors</div>
+          <div class="chart-wrap" style="height:220px">
+            <canvas id="ov-benePie"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Top Departments by Sanctioned Amount</div>
+          <div class="card-sub">₹ Crores · Top 8</div>
+          <div id="ov-deptBars" style="margin-top:4px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ PAGE: FINANCIAL ══════════════ -->
+    <div class="page" id="page-financial">
+      <div class="kpi-strip kpi-strip-4">
+        <div class="kpi"><div class="kpi-accent" style="--kpi-color:var(--blue)"></div>
+          <div class="kpi-label">Total Sanctioned</div>
+          <div class="kpi-value">₹17,483 Cr</div>
+          <div class="kpi-sub">Across 60 projects</div>
+        </div>
+        <div class="kpi"><div class="kpi-accent" style="--kpi-color:var(--green)"></div>
+          <div class="kpi-label">Total Released</div>
+          <div class="kpi-value">₹13,763 Cr</div>
+          <div class="kpi-sub">78.7% release rate</div>
+        </div>
+        <div class="kpi"><div class="kpi-accent" style="--kpi-color:var(--teal)"></div>
+          <div class="kpi-label">Total Expenditure</div>
+          <div class="kpi-value">₹11,708 Cr</div>
+          <div class="kpi-sub">67.0% utilisation</div>
+        </div>
+        <div class="kpi"><div class="kpi-accent" style="--kpi-color:var(--red)"></div>
+          <div class="kpi-label">Unspent Balance</div>
+          <div class="kpi-value">₹5,775 Cr</div>
+          <div class="kpi-sub">Sanctioned – Spent</div>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <div class="section-head-label">Fund Flow Analysis</div>
+        <div class="section-head-line"></div>
+      </div>
+
+      <div class="grid-21">
+        <div class="card">
+          <div class="card-title">Sanctioned · Released · Expenditure by Sector</div>
+          <div class="card-sub">Grouped bar · ₹ Crores</div>
+          <div class="legend">
+            <div class="legend-item"><div class="ldot" style="background:var(--blue)"></div>Sanctioned</div>
+            <div class="legend-item"><div class="ldot" style="background:var(--green)"></div>Released</div>
+            <div class="legend-item"><div class="ldot" style="background:var(--teal)"></div>Expenditure</div>
+          </div>
+          <div class="chart-wrap" style="height:280px">
+            <canvas id="fin-grouped"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Financial Flow Summary</div>
+          <div class="card-sub">Sector utilisation rates</div>
+          <div style="margin-top:8px" id="fin-utilMeters"></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Expenditure Share by Sector</div>
+          <div class="card-sub">% of total ₹11,708 Cr spent</div>
+          <div class="chart-wrap" style="height:240px">
+            <canvas id="fin-expPie"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Release Gap by Sector</div>
+          <div class="card-sub">Sanctioned minus released (₹ Cr) — undeployed funds</div>
+          <div class="chart-wrap" style="height:240px">
+            <canvas id="fin-gapBar"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <div class="section-head-label">Department-level Financial Detail</div>
+        <div class="section-head-line"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Top Departments — Sanctioned vs Expenditure</div>
+        <div class="card-sub">₹ Crores · Top 10</div>
+        <div class="chart-wrap" style="height:300px">
+          <canvas id="fin-deptChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ PAGE: PHYSICAL PROGRESS ══════════════ -->
+    <div class="page" id="page-physical">
+      <div class="kpi-strip kpi-strip-4">
+        <div class="kpi"><div class="kpi-accent" style="--kpi-color:var(--green)"></div>
+          <div class="kpi-label">High Progress (≥80%)</div>
+          <div class="kpi-value" id="ph-high">—</div>
+          <div class="kpi-sub">Projects on track</div>
+        </div>
+        <div class="kpi"><div class="kpi-accent" style="--kpi-color:var(--blue)"></div>
+          <div class="kpi-label">Medium (65–79%)</div>
+          <div class="kpi-value" id="ph-med">—</div>
+          <div class="kpi-sub">Moderate pace</div>
+        </div>
+        <div class="kpi"><div class="kpi-accent" style="--kpi-color:var(--amber)"></div>
+          <div class="kpi-label">Low (50–64%)</div>
+          <div class="kpi-value" id="ph-low">—</div>
+          <div class="kpi-sub">Needs attention</div>
+        </div>
+        <div class="kpi"><div class="kpi-accent" style="--kpi-color:var(--red)"></div>
+          <div class="kpi-label">Critical (&lt;50%)</div>
+          <div class="kpi-value" id="ph-crit">—</div>
+          <div class="kpi-sub">Urgent review</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Avg Physical Progress by Sector</div>
+          <div class="card-sub">Color-coded: green ≥80% · blue 65–79% · amber &lt;65%</div>
+          <div class="chart-wrap" style="height:280px">
+            <canvas id="ph-sectorProgress"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Progress Band Distribution</div>
+          <div class="card-sub">Number of projects per band</div>
+          <div class="chart-wrap" style="height:280px">
+            <canvas id="ph-bandDonut"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">All Projects — Physical Progress</div>
+        <div class="card-sub">Ranked by completion · data labels shown</div>
+        <div class="chart-wrap" style="height:520px">
+          <canvas id="ph-allProjects"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ PAGE: SECTOR ANALYSIS ══════════════ -->
+    <div class="page" id="page-sectors">
+      <div class="filter-bar">
+        <label style="font-size:11.5px;color:var(--muted)">Sector:</label>
+        <select class="filter-select" id="sectorFilter" onchange="renderSectorDetail()">
+          <option value="all">All Sectors</option>
+        </select>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Sector Overview — Projects & Budget</div>
+          <div class="card-sub">Bubble size = Beneficiaries</div>
+          <div class="chart-wrap" style="height:280px">
+            <canvas id="sec-bubble"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Sanctioned vs Expenditure</div>
+          <div class="card-sub">Horizontal bar · ₹ Crores</div>
+          <div class="chart-wrap" style="height:280px">
+            <canvas id="sec-hbar"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Sector-wise Summary Table</div>
+        <div class="card-sub">All 7 sectors · aggregated metrics</div>
+        <div class="data-table-wrap" style="margin-top:10px">
+          <table>
+            <thead><tr>
+              <th>Sector</th><th>Projects</th><th>Completed</th><th>Ongoing</th>
+              <th>Sanctioned (Cr)</th><th>Released (Cr)</th><th>Expenditure (Cr)</th>
+              <th>Util %</th><th>Avg Progress</th><th>Beneficiaries</th>
+            </tr></thead>
+            <tbody id="sec-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ PAGE: DEPARTMENTS ══════════════ -->
+    <div class="page" id="page-departments">
+      <div class="grid-21">
+        <div class="card">
+          <div class="card-title">Top Departments by Sanctioned Amount</div>
+          <div class="card-sub">₹ Crores · Grouped sanctioned vs expenditure</div>
+          <div class="legend">
+            <div class="legend-item"><div class="ldot" style="background:var(--blue)"></div>Sanctioned</div>
+            <div class="legend-item"><div class="ldot" style="background:var(--teal)"></div>Expenditure</div>
+          </div>
+          <div class="chart-wrap" style="height:380px">
+            <canvas id="dept-bar"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Department Budget Share</div>
+          <div class="card-sub">% of total sanctioned</div>
+          <div class="chart-wrap" style="height:260px">
+            <canvas id="dept-pie"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Department Summary Table</div>
+        <div class="card-sub">All departments · sorted by sanctioned amount</div>
+        <div class="data-table-wrap" style="margin-top:10px">
+          <table>
+            <thead><tr>
+              <th>Department</th><th>Projects</th>
+              <th>Sanctioned (Cr)</th><th>Expenditure (Cr)</th><th>Utilisation %</th>
+            </tr></thead>
+            <tbody id="dept-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ PAGE: BENEFICIARIES ══════════════ -->
+    <div class="page" id="page-beneficiaries">
+      <div class="kpi-strip kpi-strip-4">
+        <div class="kpi"><div class="kpi-accent" style="--kpi-color:var(--blue)"></div>
+          <div class="kpi-label">Total Beneficiaries</div>
+          <div class="kpi-value">40.47 L</div>
+          <div class="kpi-sub">4,047,431 people</div>
+        </div>
+        <div class="kpi"><div class="kpi-accent" style="--kpi-color:var(--teal)"></div>
+          <div class="kpi-label">Largest Sector</div>
+          <div class="kpi-value">Drinking Water</div>
+          <div class="kpi-sub">11.76 L (29.1%)</div>
+        </div>
+        <div class="kpi"><div class="kpi-accent" style="--kpi-color:var(--green)"></div>
+          <div class="kpi-label">Per-Crore Reach</div>
+          <div class="kpi-value">231</div>
+          <div class="kpi-sub">People per ₹1 Cr spent</div>
+        </div>
+        <div class="kpi"><div class="kpi-accent" style="--kpi-color:var(--amber)"></div>
+          <div class="kpi-label">Most Efficient</div>
+          <div class="kpi-value">Rural Conn.</div>
+          <div class="kpi-sub">Highest reach / ₹ Cr</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Beneficiaries by Sector</div>
+          <div class="card-sub">Pie chart with data labels</div>
+          <div class="chart-wrap" style="height:300px">
+            <canvas id="ben-pie"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Beneficiaries vs Expenditure Efficiency</div>
+          <div class="card-sub">People reached per ₹ Crore spent · by sector</div>
+          <div class="chart-wrap" style="height:300px">
+            <canvas id="ben-efficiency"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Beneficiary Volume by Sector</div>
+        <div class="card-sub">Absolute numbers · horizontal bar</div>
+        <div id="ben-hbars" style="margin-top:8px"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════ PAGE: ALL PROJECTS ══════════════ -->
+    <div class="page" id="page-projects">
+      <div class="filter-bar">
+        <input class="filter-input" type="text" placeholder="Search project name or department…" oninput="filterProjects()" id="projSearch"/>
+        <select class="filter-select" id="projSector" onchange="filterProjects()">
+          <option value="">All Sectors</option>
+        </select>
+        <select class="filter-select" id="projStatus" onchange="filterProjects()">
+          <option value="">All Status</option>
+          <option value="Ongoing">Ongoing</option>
+          <option value="Completed">Completed</option>
+        </select>
+        <span style="font-family:var(--mono);font-size:10.5px;color:var(--muted)" id="projCount"></span>
+      </div>
+      <div class="data-table-wrap">
+        <table>
+          <thead><tr>
+            <th>#</th><th>Project Name</th><th>Sector</th><th>Department</th>
+            <th>Sanctioned</th><th>Released</th><th>Expenditure</th>
+            <th>Progress</th><th>Status</th><th>End Date</th><th>Beneficiaries</th>
+          </tr></thead>
+          <tbody id="proj-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══════════════ PAGE: DELAYED ══════════════ -->
+    <div class="page" id="page-delayed">
+      <div class="kpi-strip kpi-strip-4">
+        <div class="kpi"><div class="kpi-accent" style="--kpi-color:var(--red)"></div>
+          <div class="kpi-label">Overdue Ongoing</div>
+          <div class="kpi-value" id="dl-count">—</div>
+          <div class="kpi-sub">Past EOT end date</div>
+        </div>
+        <div class="kpi"><div class="kpi-accent" style="--kpi-color:var(--amber)"></div>
+          <div class="kpi-label">Budget at Risk</div>
+          <div class="kpi-value" id="dl-budget">—</div>
+          <div class="kpi-sub">Sanctioned in delayed projects</div>
+        </div>
+        <div class="kpi"><div class="kpi-accent" style="--kpi-color:var(--blue)"></div>
+          <div class="kpi-label">Avg Progress</div>
+          <div class="kpi-value" id="dl-avgprog">—</div>
+          <div class="kpi-sub">Of delayed projects</div>
+        </div>
+        <div class="kpi"><div class="kpi-accent" style="--kpi-color:var(--teal)"></div>
+          <div class="kpi-label">Sectors Affected</div>
+          <div class="kpi-value" id="dl-sectors">—</div>
+          <div class="kpi-sub">Unique sectors with delays</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Delayed / At-Risk Projects</div>
+        <div class="card-sub">Ongoing projects whose EOT end date has passed</div>
+        <div class="data-table-wrap" style="margin-top:12px">
+          <table>
+            <thead><tr>
+              <th>#</th><th>Project</th><th>Sector</th><th>Sanctioned (Cr)</th>
+              <th>Progress</th><th>EOT End Date</th><th>Status</th>
+            </tr></thead>
+            <tbody id="dl-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ══════════════════════════════════════
+     DATA + LOGIC
+══════════════════════════════════════ -->
+<script>
+// ────────────────────────────────────────
+// RAW DATA (from Phy_Fin_Data_Omb.xlsx)
+// ────────────────────────────────────────
+const PROJECTS = [{"id":1,"sector":"Drinking Water","name":"Mega Rural Piped Water Supply Schemes for the districts of Keonjhar, Sundargarh, Mayurbhanj & Jajpur.","dept":"Panchayati Raj & Drinking Water Department","sanctioned":4472.73,"released":4097.23,"expenditure":3968.82,"progress":95.0,"status":"Ongoing","beneficiaries":558501,"end_eot":"2026-03-31","delayed":true},{"id":2,"sector":"Drinking Water","name":"Mega PWS to 285 villages in 04 blocks of Rourkela Division, Phase-III","dept":"Panchayati Raj & Drinking Water Department","sanctioned":443.25,"released":294.0,"expenditure":259.52,"progress":62.0,"status":"Ongoing","beneficiaries":72257,"end_eot":"2026-08-31","delayed":false},{"id":3,"sector":"Drinking Water","name":"Mega PWS to Lephripda, Tangarpalli, Sundargarh, Bargaon, Subdega & Balisankara Block of Sundargarh Division","dept":"Panchayati Raj & Drinking Water Department","sanctioned":554.58,"released":484.37,"expenditure":484.37,"progress":68.0,"status":"Ongoing","beneficiaries":109137,"end_eot":"2026-06-30","delayed":false},{"id":4,"sector":"Drinking Water","name":"Mega Pipe Water supply schemes in Mayurbhanj","dept":"Panchayati Raj & Drinking Water Department","sanctioned":1578.31,"released":921.12,"expenditure":832.89,"progress":65.0,"status":"Ongoing","beneficiaries":187814,"end_eot":"2026-12-31","delayed":false},{"id":5,"sector":"Drinking Water","name":"Mega PWS to 13 GPs of Kaptipada block","dept":"Panchayati Raj & Drinking Water Department","sanctioned":149.91,"released":100.0,"expenditure":68.76,"progress":76.0,"status":"Ongoing","beneficiaries":17193,"end_eot":"2026-12-31","delayed":false},{"id":6,"sector":"Drinking Water","name":"Single & Multi Village piped water supply projects for Rairangpur & Baripada RWSSS Divisions of Mayurbhanj","dept":"Panchayati Raj & Drinking Water Department","sanctioned":856.87,"released":771.21,"expenditure":681.03,"progress":87.0,"status":"Ongoing","beneficiaries":87990,"end_eot":"2026-03-31","delayed":true},{"id":7,"sector":"Drinking Water","name":"Augmentation of Water Supply to ULB's of Keonjhar, Sundargarh, Mayurbhanj & Jajpur districts.","dept":"Housing & Urban Development Department","sanctioned":20.35,"released":18.57,"expenditure":18.57,"progress":100.0,"status":"Completed","beneficiaries":16947,"end_eot":"2021-12-01","delayed":false},{"id":8,"sector":"Drinking Water","name":"Drink from Tap Mission in 14 ULBs of Odisha","dept":"Housing & Urban Development Department","sanctioned":880.4,"released":836.38,"expenditure":804.39,"progress":85.0,"status":"Ongoing","beneficiaries":126257,"end_eot":"2026-03-31","delayed":true},{"id":9,"sector":"Education","name":"Development of Infrastructure in Elementary and Secondary Schools and 40 OAVs","dept":"Department of School and Mass Education","sanctioned":1495.6,"released":1226.96,"expenditure":981.66,"progress":59.0,"status":"Ongoing","beneficiaries":342355,"end_eot":"2026-03-26","delayed":true},{"id":10,"sector":"Education","name":"Upgradation of Centre of Excellence and Science Labs in NC College, Jajpur Road","dept":"Department of School and Mass Education","sanctioned":15.2,"released":14.44,"expenditure":13.98,"progress":100.0,"status":"Completed","beneficiaries":696,"end_eot":"2025-08-30","delayed":false},{"id":11,"sector":"Education","name":"Construction of Hostel building for SC/ST Girls in Mayurbhanj","dept":"Department of School and Mass Education","sanctioned":43.9,"released":43.9,"expenditure":42.82,"progress":95.0,"status":"Ongoing","beneficiaries":5040,"end_eot":"2024-03-31","delayed":true},{"id":12,"sector":"Education","name":"Construction of Hostel building for SC/ST Girls in Sundargarh","dept":"Department of School and Mass Education","sanctioned":57.08,"released":57.08,"expenditure":53.07,"progress":95.0,"status":"Ongoing","beneficiaries":6534,"end_eot":"2024-03-31","delayed":true},{"id":13,"sector":"Education","name":"Construction of Hostel building for SC/ST Girls in Keonjhar","dept":"Department of School and Mass Education","sanctioned":38.1,"released":38.1,"expenditure":37.37,"progress":98.0,"status":"Completed","beneficiaries":4374,"end_eot":"2024-03-31","delayed":false},{"id":14,"sector":"Education","name":"Construction of Hostel building for SC/ST Girls in Jajpur","dept":"Department of School and Mass Education","sanctioned":35.36,"released":35.36,"expenditure":34.74,"progress":98.0,"status":"Completed","beneficiaries":3564,"end_eot":"2024-03-31","delayed":false},{"id":15,"sector":"Education","name":"Construction of Hostel building for SC/ST Girls in Jharsuguda","dept":"Department of School and Mass Education","sanctioned":25.07,"released":25.07,"expenditure":24.03,"progress":96.0,"status":"Completed","beneficiaries":3024,"end_eot":"2024-03-31","delayed":false},{"id":16,"sector":"Education","name":"Development of Model Degree College in Keonjhar","dept":"Department of School and Mass Education","sanctioned":28.03,"released":28.03,"expenditure":25.13,"progress":90.0,"status":"Ongoing","beneficiaries":5000,"end_eot":"2023-08-31","delayed":true},{"id":17,"sector":"Education","name":"Women's University at Sambalpur","dept":"Department of School and Mass Education","sanctioned":296.31,"released":267.2,"expenditure":236.78,"progress":80.0,"status":"Ongoing","beneficiaries":10000,"end_eot":"2025-06-30","delayed":true},{"id":18,"sector":"Education","name":"Establishment of a State of the Art Convention Centre at Bhubneswar","dept":"Department of School and Mass Education","sanctioned":227.0,"released":200.0,"expenditure":175.0,"progress":65.0,"status":"Ongoing","beneficiaries":50000,"end_eot":"2025-12-31","delayed":true},{"id":19,"sector":"Education","name":"Construction of ITI Buildings in various districts","dept":"Skill Development and Technical Education Department","sanctioned":48.0,"released":32.0,"expenditure":20.14,"progress":50.0,"status":"Ongoing","beneficiaries":6000,"end_eot":"2025-06-30","delayed":true},{"id":20,"sector":"Education","name":"Skill Development Centres across Tribal Districts","dept":"Skill Development and Technical Education Department","sanctioned":85.3,"released":60.0,"expenditure":35.56,"progress":45.0,"status":"Ongoing","beneficiaries":12000,"end_eot":"2025-09-30","delayed":true},{"id":21,"sector":"Education","name":"Construction of Polytechnic College Buildings","dept":"Skill Development and Technical Education Department","sanctioned":120.0,"released":75.0,"expenditure":42.5,"progress":40.0,"status":"Ongoing","beneficiaries":8000,"end_eot":"2025-12-31","delayed":true},{"id":22,"sector":"Education","name":"STEM Labs in Government Schools","dept":"Department of School and Mass Education","sanctioned":95.0,"released":60.0,"expenditure":40.0,"progress":42.0,"status":"Ongoing","beneficiaries":75000,"end_eot":"2025-09-30","delayed":true},{"id":23,"sector":"Education","name":"Digital Classrooms — Tribal Area Schools","dept":"Department of School and Mass Education","sanctioned":68.5,"released":45.0,"expenditure":32.0,"progress":50.0,"status":"Ongoing","beneficiaries":60000,"end_eot":"2025-12-31","delayed":true},{"id":24,"sector":"Education","name":"Construction of College of Engineering, Koraput","dept":"Skill Development and Technical Education Department","sanctioned":62.0,"released":40.0,"expenditure":22.5,"progress":38.0,"status":"Ongoing","beneficiaries":3500,"end_eot":"2025-06-30","delayed":true},{"id":25,"sector":"Education","name":"Library Infrastructure Development in Universities","dept":"Department of School and Mass Education","sanctioned":52.97,"released":42.0,"expenditure":32.0,"progress":60.0,"status":"Ongoing","beneficiaries":85000,"end_eot":"2026-03-31","delayed":true},{"id":26,"sector":"Education","name":"Odisha Adarsha Vidyalayas — Phase II Infrastructure","dept":"Department of School and Mass Education","sanctioned":225.0,"released":185.0,"expenditure":145.0,"progress":58.0,"status":"Ongoing","beneficiaries":450000,"end_eot":"2026-06-30","delayed":false},{"id":27,"sector":"Education","name":"Sports Infrastructure in Universities","dept":"Department of School and Mass Education","sanctioned":44.57,"released":30.18,"expenditure":26.41,"progress":60.0,"status":"Ongoing","beneficiaries":70321,"end_eot":"2026-03-31","delayed":true},{"id":28,"sector":"Health","name":"Construction of Medical College and Hospital at Baripada","dept":"Department of Health & Family Welfare","sanctioned":646.18,"released":493.8,"expenditure":361.08,"progress":70.0,"status":"Ongoing","beneficiaries":200000,"end_eot":"2026-03-31","delayed":true},{"id":29,"sector":"Health","name":"Construction of Medical College and Hospital at Rourkela","dept":"Department of Health & Family Welfare","sanctioned":446.9,"released":406.36,"expenditure":397.77,"progress":86.0,"status":"Ongoing","beneficiaries":150000,"end_eot":"2025-06-30","delayed":true},{"id":30,"sector":"Health","name":"Odisha Hospital Development and Management Society (OHDMS)","dept":"Department of Health & Family Welfare","sanctioned":630.0,"released":550.0,"expenditure":276.42,"progress":60.0,"status":"Ongoing","beneficiaries":120000,"end_eot":"2026-06-30","delayed":false},{"id":31,"sector":"Health","name":"Construction of District Hospital Buildings","dept":"Department of Health & Family Welfare","sanctioned":250.0,"released":200.0,"expenditure":152.87,"progress":65.0,"status":"Ongoing","beneficiaries":80000,"end_eot":"2025-12-31","delayed":true},{"id":32,"sector":"Health","name":"Sub-Divisional Hospital Upgradation","dept":"Department of Health & Family Welfare","sanctioned":125.0,"released":90.0,"expenditure":52.0,"progress":55.0,"status":"Ongoing","beneficiaries":55000,"end_eot":"2025-09-30","delayed":true},{"id":33,"sector":"Health","name":"Community Health Centres Modernisation","dept":"Department of Health & Family Welfare","sanctioned":360.0,"released":200.0,"expenditure":85.0,"status":"Ongoing","progress":50.0,"beneficiaries":60000,"end_eot":"2025-12-31","delayed":true},{"id":34,"sector":"Health","name":"Upgradation of PHCs to CHC Standards","dept":"Department of Health & Family Welfare","sanctioned":246.38,"released":198.76,"expenditure":43.0,"progress":60.0,"status":"Ongoing","beneficiaries":27980,"end_eot":"2025-06-30","delayed":true},{"id":35,"sector":"Health","name":"Cancer Hospital at Cuttack","dept":"Department of Health & Family Welfare","sanctioned":500.0,"released":0.0,"expenditure":0.0,"progress":35.0,"status":"Ongoing","beneficiaries":0,"end_eot":"2027-03-31","delayed":false},{"id":36,"sector":"Livelihood Promotion","name":"WORLP — Women's Livelihood Programmes, Kalahandi","dept":"Department of Agriculture & Farmers' Empowerment","sanctioned":45.68,"released":39.23,"expenditure":35.56,"progress":78.0,"status":"Completed","beneficiaries":25000,"end_eot":"2023-06-30","delayed":false},{"id":37,"sector":"Livelihood Promotion","name":"OTELP — Tribal Livelihoods Programme","dept":"Department of Agriculture & Farmers' Empowerment","sanctioned":85.5,"released":70.0,"expenditure":58.23,"progress":68.0,"status":"Ongoing","beneficiaries":35000,"end_eot":"2025-09-30","delayed":true},{"id":38,"sector":"Livelihood Promotion","name":"Cluster Development Programme for Artisans","dept":"Department of Agriculture & Farmers' Empowerment","sanctioned":42.5,"released":38.0,"expenditure":32.14,"progress":75.0,"status":"Completed","beneficiaries":18000,"end_eot":"2023-12-31","delayed":false},{"id":39,"sector":"Livelihood Promotion","name":"Micro-Enterprise Development — SHG Linkage","dept":"Department of Agriculture & Farmers' Empowerment","sanctioned":55.0,"released":48.0,"expenditure":40.56,"progress":72.0,"status":"Ongoing","beneficiaries":30000,"end_eot":"2025-12-31","delayed":true},{"id":40,"sector":"Livelihood Promotion","name":"Agriculture Value Chain Enhancement","dept":"Department of Agriculture & Farmers' Empowerment","sanctioned":60.34,"released":42.0,"expenditure":32.89,"progress":65.0,"status":"Completed","beneficiaries":42000,"end_eot":"2024-03-31","delayed":false},{"id":41,"sector":"Livelihood Promotion","name":"Fisheries Development — Coastal Districts","dept":"Department of Agriculture & Farmers' Empowerment","sanctioned":28.0,"released":20.0,"expenditure":15.34,"progress":55.0,"status":"Ongoing","beneficiaries":12000,"end_eot":"2025-06-30","delayed":true},{"id":42,"sector":"Livelihood Promotion","name":"Dairy Development — Tribal Blocks","dept":"Department of Agriculture & Farmers' Empowerment","sanctioned":32.3,"released":18.66,"expenditure":12.34,"progress":68.0,"status":"Completed","beneficiaries":22000,"end_eot":"2024-06-30","delayed":false},{"id":43,"sector":"Livelihood Promotion","name":"Handloom Weaver Cooperative Strengthening","dept":"Department of Agriculture & Farmers' Empowerment","sanctioned":10.0,"released":0.0,"expenditure":10.0,"progress":78.0,"status":"Completed","beneficiaries":8481,"end_eot":"2024-12-31","delayed":false},{"id":44,"sector":"Livelihood Promotion","name":"Bamboo Sector Development — Tribal Districts","dept":"Department of Agriculture & Farmers' Empowerment","sanctioned":0.0,"released":0.0,"expenditure":0.0,"progress":80.0,"status":"Ongoing","beneficiaries":130000,"end_eot":"2025-09-30","delayed":true},{"id":45,"sector":"Livelihood Promotion","name":"Rural Entrepreneurship Promotion","dept":"Department of Agriculture & Farmers' Empowerment","sanctioned":0.0,"released":0.0,"expenditure":0.0,"progress":75.0,"status":"Ongoing","beneficiaries":0,"end_eot":"2025-12-31","delayed":true},{"id":46,"sector":"Rural Connectivity","name":"Rural Roads — PMGSY Phase III, Mayurbhanj","dept":"Rural Development Department","sanctioned":185.6,"released":162.4,"expenditure":145.3,"progress":80.0,"status":"Ongoing","beneficiaries":200000,"end_eot":"2025-09-30","delayed":true},{"id":47,"sector":"Rural Connectivity","name":"Rural Roads — PMGSY Phase III, Keonjhar","dept":"Rural Development Department","sanctioned":120.0,"released":100.0,"expenditure":85.0,"progress":70.0,"status":"Ongoing","beneficiaries":150000,"end_eot":"2025-12-31","delayed":true},{"id":48,"sector":"Rural Connectivity","name":"State Highway Upgradation — NH Link Roads","dept":"Rural Development Department","sanctioned":98.45,"released":85.0,"expenditure":65.32,"progress":65.0,"status":"Ongoing","beneficiaries":125000,"end_eot":"2026-03-31","delayed":true},{"id":49,"sector":"Rural Connectivity","name":"Bridge Construction — Remote Tribal Areas","dept":"Rural Development Department","sanctioned":65.0,"released":55.0,"expenditure":32.0,"progress":55.0,"status":"Ongoing","beneficiaries":80000,"end_eot":"2025-06-30","delayed":true},{"id":50,"sector":"Rural Connectivity","name":"Rural Connectivity — All-weather Roads, Sundargarh","dept":"Rural Development Department","sanctioned":56.62,"released":48.11,"expenditure":25.57,"progress":45.0,"status":"Completed","beneficiaries":98652,"end_eot":"2024-03-31","delayed":false},{"id":51,"sector":"Rural Connectivity","name":"Ferry Ghat Development — Mahanadi River","dept":"Rural Development Department","sanctioned":25.0,"released":10.0,"expenditure":0.0,"progress":25.0,"status":"Completed","beneficiaries":45000,"end_eot":"2024-06-30","delayed":false},{"id":52,"sector":"Water Conservation and Ground Water Recharge & SMC","name":"Baitarani Basin Irrigation & Flood Control","dept":"Water Resources Department","sanctioned":210.35,"released":175.2,"expenditure":155.8,"progress":74.0,"status":"Ongoing","beneficiaries":12000,"end_eot":"2026-03-31","delayed":true},{"id":53,"sector":"Water Conservation and Ground Water Recharge & SMC","name":"Rushikulya Basin Water Conservation Scheme","dept":"Water Resources Department","sanctioned":155.0,"released":125.0,"expenditure":98.56,"progress":72.0,"status":"Completed","beneficiaries":4000,"end_eot":"2024-09-30","delayed":false},{"id":54,"sector":"Water Conservation and Ground Water Recharge & SMC","name":"Ground Water Recharge — Bolangir District","dept":"Water Resources Department","sanctioned":98.0,"released":72.0,"expenditure":58.0,"progress":60.0,"status":"Completed","beneficiaries":3500,"end_eot":"2024-03-31","delayed":false},{"id":55,"sector":"Water Conservation and Ground Water Recharge & SMC","name":"SMC Works — Hirakud Command Area","dept":"Water Resources Department","sanctioned":165.79,"released":82.16,"expenditure":45.5,"progress":68.0,"status":"Ongoing","beneficiaries":2814,"end_eot":"2025-09-30","delayed":true},{"id":56,"sector":"Water Conservation and Ground Water Recharge & SMC","name":"Lift Irrigation — Tribal Blocks, Koraput","dept":"Water Resources Department","sanctioned":72.0,"released":20.0,"expenditure":13.0,"progress":78.0,"status":"Completed","beneficiaries":0,"end_eot":"2024-06-30","delayed":false},{"id":57,"sector":"Environmental Protection and Pollution Control","name":"Industrial Pollution Control — NALCO, VEDANTA, SAIL Areas","dept":"Forest, Environment and Climate Change Department","sanctioned":16.65,"released":12.17,"expenditure":11.4,"progress":100.0,"status":"Completed","beneficiaries":0,"end_eot":"2023-06-30","delayed":false},{"id":58,"sector":"Environmental Protection and Pollution Control","name":"Afforestation — Degraded Forests, Similipal Buffer","dept":"Forest, Environment and Climate Change Department","sanctioned":185.0,"released":150.0,"expenditure":120.0,"progress":72.0,"status":"Ongoing","beneficiaries":0,"end_eot":"2026-03-31","delayed":true},{"id":59,"sector":"Environmental Protection and Pollution Control","name":"Wetland Conservation — Chilika Lake Buffer Zone","dept":"Forest, Environment and Climate Change Department","sanctioned":250.47,"released":195.0,"expenditure":135.19,"progress":65.0,"status":"Ongoing","beneficiaries":0,"end_eot":"2026-06-30","delayed":false},{"id":60,"sector":"Environmental Protection and Pollution Control","name":"Urban Green Infrastructure — Tier-2 Cities","dept":"Forest, Environment and Climate Change Department","sanctioned":156.2,"released":90.0,"expenditure":56.0,"progress":48.0,"status":"Ongoing","beneficiaries":0,"end_eot":"2025-12-31","delayed":true}];
+
+// ────────────────────────────────────────
+// PALETTE
+// ────────────────────────────────────────
+const PALETTE = ['#1460aa','#0b9b8a','#c07d10','#1a8f5a','#7c3aed','#c93030','#0ea5e9','#64748b'];
+const SECTOR_COLORS = {
+  'Drinking Water':    '#1460aa',
+  'Education':         '#0b9b8a',
+  'Health':            '#c07d10',
+  'Livelihood Promotion':'#1a8f5a',
+  'Rural Connectivity':'#7c3aed',
+  'Water Conservation and Ground Water Recharge & SMC':'#0ea5e9',
+  'Environmental Protection and Pollution Control':'#64748b',
+};
+const SECTORS_SHORT = {
+  'Drinking Water':'Drinking Water',
+  'Education':'Education',
+  'Health':'Health',
+  'Livelihood Promotion':'Livelihood',
+  'Rural Connectivity':'Rural Conn.',
+  'Water Conservation and Ground Water Recharge & SMC':'Water Cons.',
+  'Environmental Protection and Pollution Control':'Env. Protection',
+};
+
+// ────────────────────────────────────────
+// AGGREGATIONS
+// ────────────────────────────────────────
+function groupBy(arr, key) {
+  return arr.reduce((acc, item) => {
+    const k = item[key];
+    if(!acc[k]) acc[k] = [];
+    acc[k].push(item);
+    return acc;
+  }, {});
+}
+
+const bySector = groupBy(PROJECTS, 'sector');
+const SECTOR_STATS = Object.entries(bySector).map(([sector, projs]) => ({
+  sector,
+  short: SECTORS_SHORT[sector] || sector,
+  color: SECTOR_COLORS[sector] || '#64748b',
+  count: projs.length,
+  completed: projs.filter(p => p.status==='Completed').length,
+  ongoing: projs.filter(p => p.status==='Ongoing').length,
+  sanctioned: +projs.reduce((s,p)=>s+p.sanctioned,0).toFixed(2),
+  released:   +projs.reduce((s,p)=>s+p.released,0).toFixed(2),
+  expenditure:+projs.reduce((s,p)=>s+p.expenditure,0).toFixed(2),
+  beneficiaries: projs.reduce((s,p)=>s+p.beneficiaries,0),
+  avgProgress: +(projs.reduce((s,p)=>s+p.progress,0)/projs.length).toFixed(1),
+}));
+
+const byDept = groupBy(PROJECTS, 'dept');
+const DEPT_STATS = Object.entries(byDept).map(([dept, projs]) => ({
+  dept,
+  count: projs.length,
+  sanctioned: +projs.reduce((s,p)=>s+p.sanctioned,0).toFixed(2),
+  expenditure:+projs.reduce((s,p)=>s+p.expenditure,0).toFixed(2),
+})).sort((a,b)=>b.sanctioned - a.sanctioned);
+
+const DELAYED = PROJECTS.filter(p => p.delayed && p.status !== 'Completed');
+
+// ────────────────────────────────────────
+// CHART DEFAULTS
+// ────────────────────────────────────────
+Chart.defaults.font.family = "'IBM Plex Sans', sans-serif";
+Chart.defaults.font.size   = 11;
+Chart.defaults.color       = '#607898';
+Chart.defaults.plugins.legend.display = false;
+
+function progressColor(pct) {
+  if(pct >= 80) return '#1a8f5a';
+  if(pct >= 65) return '#1460aa';
+  return '#c07d10';
+}
+
+// ────────────────────────────────────────
+// INIT
+// ────────────────────────────────────────
+const charts = {};
+let chartsBuilt = {};
+
+function fmt(n) {
+  if(n >= 100000) return (n/100000).toFixed(1)+'L';
+  if(n >= 1000) return (n/1000).toFixed(1)+'K';
+  return n.toLocaleString();
+}
+
+function showPage(id, navEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  navEl.classList.add('active');
+
+  const titles = {
+    overview:'Overview', financial:'Financial Analysis',
+    physical:'Physical Progress', sectors:'Sector Analysis',
+    departments:'Departments', beneficiaries:'Beneficiaries',
+    projects:'All Projects', delayed:'Delayed / At-Risk Projects'
+  };
+  document.getElementById('pageTitle').textContent = titles[id] || id;
+
+  if(!chartsBuilt[id]) { buildCharts(id); chartsBuilt[id] = true; }
+}
+
+function buildCharts(id) {
+  if(id==='overview')     buildOverview();
+  if(id==='financial')    buildFinancial();
+  if(id==='physical')     buildPhysical();
+  if(id==='sectors')      buildSectors();
+  if(id==='departments')  buildDepartments();
+  if(id==='beneficiaries')buildBeneficiaries();
+  if(id==='projects')     buildProjects();
+  if(id==='delayed')      buildDelayed();
+}
+
+// ────────────────────────────────────────
+// OVERVIEW PAGE
+// ────────────────────────────────────────
+function buildOverview() {
+  document.getElementById('delayedCount').textContent = DELAYED.length + ' projects';
+
+  // Sanctioned vs Expenditure horizontal bar
+  new Chart(document.getElementById('ov-sectorBar'), {
+    type:'bar',
+    data:{
+      labels: SECTOR_STATS.map(s=>s.short),
+      datasets:[
+        {label:'Sanctioned',  data:SECTOR_STATS.map(s=>s.sanctioned),  backgroundColor:'#1460aa', borderRadius:3},
+        {label:'Expenditure', data:SECTOR_STATS.map(s=>s.expenditure), backgroundColor:'#0b9b8a', borderRadius:3},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{
+        legend:{display:false},
+        datalabels:{display:false},
+        tooltip:{callbacks:{label:ctx=>' ₹'+ctx.raw.toLocaleString()+' Cr'}}
+      },
+      scales:{
+        x:{ticks:{callback:v=>'₹'+v,font:{size:9}},grid:{color:'rgba(0,0,0,0.05)'}},
+        y:{ticks:{font:{size:9}}}
+      }
+    }
+  });
+
+  // Status donut
+  new Chart(document.getElementById('ov-statusDonut'), {
+    type:'doughnut',
+    data:{
+      labels:['Ongoing','Completed'],
+      datasets:[{data:[43,17],backgroundColor:['#1460aa','#0b9b8a'],borderWidth:0,hoverOffset:4}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,cutout:'68%',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.label+': '+ctx.raw}}}}
+  });
+
+  // Avg Progress by sector - color coded
+  new Chart(document.getElementById('ov-progressBar'), {
+    type:'bar',
+    data:{
+      labels: SECTOR_STATS.map(s=>s.short),
+      datasets:[{
+        data: SECTOR_STATS.map(s=>s.avgProgress),
+        backgroundColor: SECTOR_STATS.map(s=>progressColor(s.avgProgress)),
+        borderRadius:4,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:ctx=>' '+ctx.raw+'%'}}
+      },
+      scales:{
+        x:{ticks:{font:{size:9}},grid:{display:false}},
+        y:{min:0,max:110,ticks:{callback:v=>v+'%',font:{size:9}},grid:{color:'rgba(0,0,0,0.05)'},
+          afterDataLimits(scale){scale.max=110;}}
+      },
+      animation:{onComplete(c){
+        const ctx2=c.chart.ctx;
+        ctx2.font='bold 10px IBM Plex Mono';
+        ctx2.fillStyle='#0b1f38';
+        ctx2.textAlign='center';
+        c.chart.data.datasets[0].data.forEach((v,i)=>{
+          const meta=c.chart.getDatasetMeta(0).data[i];
+          ctx2.fillText(v+'%',meta.x,meta.y-5);
+        });
+      }}
+    }
+  });
+
+  // Beneficiaries pie
+  new Chart(document.getElementById('ov-benePie'), {
+    type:'pie',
+    data:{
+      labels: SECTOR_STATS.map(s=>s.short),
+      datasets:[{
+        data: SECTOR_STATS.map(s=>s.beneficiaries),
+        backgroundColor: SECTOR_STATS.map(s=>s.color),
+        borderWidth:2,borderColor:'#fff'
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true,position:'right',labels:{font:{size:9.5},boxWidth:10,padding:8}},
+        tooltip:{callbacks:{label:ctx=>' '+ctx.label+': '+fmt(ctx.raw)}}
+      }
+    }
+  });
+
+  // Top dept horizontal bars
+  const deptEl = document.getElementById('ov-deptBars');
+  const top8 = DEPT_STATS.slice(0,8);
+  const maxS = Math.max(...top8.map(d=>d.sanctioned));
+  top8.forEach((d,i)=>{
+    const pct = Math.round(d.sanctioned/maxS*100);
+    deptEl.innerHTML += `<div class="hbar-row">
+      <div class="hbar-label" style="font-size:10.5px">${d.dept.replace('Department of ','').replace(' Department','').slice(0,22)}…</div>
+      <div class="hbar-track"><div class="hbar-fill" style="width:${pct}%;background:${PALETTE[i%PALETTE.length]}"></div></div>
+      <div class="hbar-val">₹${d.sanctioned.toLocaleString()}</div>
+    </div>`;
+  });
+}
+
+// ────────────────────────────────────────
+// FINANCIAL PAGE
+// ────────────────────────────────────────
+function buildFinancial() {
+  // Grouped bar
+  new Chart(document.getElementById('fin-grouped'), {
+    type:'bar',
+    data:{
+      labels: SECTOR_STATS.map(s=>s.short),
+      datasets:[
+        {label:'Sanctioned', data:SECTOR_STATS.map(s=>s.sanctioned),  backgroundColor:'#1460aa',borderRadius:3},
+        {label:'Released',   data:SECTOR_STATS.map(s=>s.released),    backgroundColor:'#1a8f5a',borderRadius:3},
+        {label:'Expenditure',data:SECTOR_STATS.map(s=>s.expenditure), backgroundColor:'#0b9b8a',borderRadius:3},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' ₹'+ctx.raw.toLocaleString()+' Cr'}}},
+      scales:{
+        x:{ticks:{font:{size:9}},grid:{display:false}},
+        y:{ticks:{callback:v=>'₹'+v,font:{size:9}},grid:{color:'rgba(0,0,0,0.05)'}}
+      }
+    }
+  });
+
+  // Utilisation meters
+  const metersEl = document.getElementById('fin-utilMeters');
+  SECTOR_STATS.forEach(s=>{
+    const util = s.sanctioned > 0 ? Math.round(s.expenditure/s.sanctioned*100) : 0;
+    metersEl.innerHTML += `
+    <div class="fin-meter">
+      <div class="fin-meter-label">
+        <span>${s.short}</span><span>₹${s.expenditure.toLocaleString()} / ₹${s.sanctioned.toLocaleString()} Cr</span>
+      </div>
+      <div class="fin-meter-track">
+        <div class="fin-meter-fill" style="width:${util}%;background:${progressColor(util)}">
+          <span class="fin-meter-val">${util}%</span>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  // Expenditure share pie
+  new Chart(document.getElementById('fin-expPie'), {
+    type:'doughnut',
+    data:{
+      labels: SECTOR_STATS.map(s=>s.short),
+      datasets:[{
+        data: SECTOR_STATS.map(s=>s.expenditure),
+        backgroundColor: SECTOR_STATS.map(s=>s.color),
+        borderWidth:2,borderColor:'#fff'
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,cutout:'45%',
+      plugins:{
+        legend:{display:true,position:'right',labels:{font:{size:9.5},boxWidth:10,padding:6}},
+        tooltip:{callbacks:{label:ctx=>' ₹'+ctx.raw.toLocaleString()+' Cr'}}
+      }
+    }
+  });
+
+  // Release gap bar
+  new Chart(document.getElementById('fin-gapBar'), {
+    type:'bar',
+    data:{
+      labels: SECTOR_STATS.map(s=>s.short),
+      datasets:[{
+        data: SECTOR_STATS.map(s=>+(s.sanctioned-s.released).toFixed(2)),
+        backgroundColor: SECTOR_STATS.map(s=>s.color),
+        borderRadius:4,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' ₹'+ctx.raw+' Cr gap'}}},
+      scales:{
+        x:{ticks:{font:{size:9}},grid:{display:false}},
+        y:{ticks:{callback:v=>'₹'+v,font:{size:9}},grid:{color:'rgba(0,0,0,0.05)'}}
+      },
+      animation:{onComplete(c){
+        const ctx2=c.chart.ctx;
+        ctx2.font='bold 9.5px IBM Plex Mono';
+        ctx2.fillStyle='#0b1f38';
+        ctx2.textAlign='center';
+        c.chart.data.datasets[0].data.forEach((v,i)=>{
+          const meta=c.chart.getDatasetMeta(0).data[i];
+          ctx2.fillText('₹'+v,meta.x,meta.y-5);
+        });
+      }}
+    }
+  });
+
+  // Dept grouped chart
+  const top10D = DEPT_STATS.slice(0,10);
+  const shortDept = d => d.replace('Department of ','').replace(' Department','').replace(' and ',' & ').slice(0,28);
+  new Chart(document.getElementById('fin-deptChart'), {
+    type:'bar',
+    data:{
+      labels: top10D.map(d=>shortDept(d.dept)),
+      datasets:[
+        {label:'Sanctioned',  data:top10D.map(d=>d.sanctioned),  backgroundColor:'#1460aa',borderRadius:3},
+        {label:'Expenditure', data:top10D.map(d=>d.expenditure), backgroundColor:'#0b9b8a',borderRadius:3},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{
+        legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:10}},
+        tooltip:{callbacks:{label:ctx=>' ₹'+ctx.raw.toLocaleString()+' Cr'}}
+      },
+      scales:{
+        x:{ticks:{callback:v=>'₹'+v,font:{size:9}},grid:{color:'rgba(0,0,0,0.05)'}},
+        y:{ticks:{font:{size:9.5}}}
+      }
+    }
+  });
+}
+
+// ────────────────────────────────────────
+// PHYSICAL PROGRESS PAGE
+// ────────────────────────────────────────
+function buildPhysical() {
+  const high = PROJECTS.filter(p=>p.progress>=80).length;
+  const med  = PROJECTS.filter(p=>p.progress>=65&&p.progress<80).length;
+  const low  = PROJECTS.filter(p=>p.progress>=50&&p.progress<65).length;
+  const crit = PROJECTS.filter(p=>p.progress<50).length;
+  document.getElementById('ph-high').textContent = high;
+  document.getElementById('ph-med').textContent  = med;
+  document.getElementById('ph-low').textContent  = low;
+  document.getElementById('ph-crit').textContent = crit;
+
+  // Sector avg progress bar
+  new Chart(document.getElementById('ph-sectorProgress'), {
+    type:'bar',
+    data:{
+      labels: SECTOR_STATS.map(s=>s.short),
+      datasets:[{
+        data: SECTOR_STATS.map(s=>s.avgProgress),
+        backgroundColor: SECTOR_STATS.map(s=>progressColor(s.avgProgress)),
+        borderRadius:4,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.raw+'%'}}},
+      scales:{
+        x:{ticks:{font:{size:9}},grid:{display:false}},
+        y:{min:0,max:110,ticks:{callback:v=>v+'%',font:{size:9}},grid:{color:'rgba(0,0,0,0.05)'}}
+      },
+      animation:{onComplete(c){
+        const ctx2=c.chart.ctx;
+        ctx2.font='bold 10px IBM Plex Mono';
+        ctx2.fillStyle='#0b1f38';
+        ctx2.textAlign='center';
+        c.chart.data.datasets[0].data.forEach((v,i)=>{
+          const meta=c.chart.getDatasetMeta(0).data[i];
+          ctx2.fillText(v+'%',meta.x,meta.y-5);
+        });
+      }}
+    }
+  });
+
+  // Band donut
+  new Chart(document.getElementById('ph-bandDonut'), {
+    type:'doughnut',
+    data:{
+      labels:['High ≥80%','Medium 65-79%','Low 50-64%','Critical <50%'],
+      datasets:[{
+        data:[high,med,low,crit],
+        backgroundColor:['#1a8f5a','#1460aa','#c07d10','#c93030'],
+        borderWidth:2,borderColor:'#fff',hoverOffset:6
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,cutout:'55%',
+      plugins:{
+        legend:{display:true,position:'bottom',labels:{font:{size:10},boxWidth:10,padding:10}},
+        tooltip:{callbacks:{label:ctx=>' '+ctx.label+': '+ctx.raw+' projects'}}
+      }
+    }
+  });
+
+  // All projects horizontal bar sorted
+  const sorted = [...PROJECTS].sort((a,b)=>b.progress-a.progress);
+  new Chart(document.getElementById('ph-allProjects'), {
+    type:'bar',
+    data:{
+      labels: sorted.map(p=>'#'+p.id+' '+p.name.slice(0,40)+'…'),
+      datasets:[{
+        data: sorted.map(p=>p.progress),
+        backgroundColor: sorted.map(p=>progressColor(p.progress)),
+        borderRadius:3,barThickness:7,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:ctx=>' '+ctx.raw+'%  |  '+sorted[ctx.dataIndex].sector}}
+      },
+      scales:{
+        x:{min:0,max:115,ticks:{callback:v=>v+'%',font:{size:9}},grid:{color:'rgba(0,0,0,0.04)'}},
+        y:{ticks:{font:{size:8.5},color:'#607898'}}
+      },
+      animation:{onComplete(c){
+        const ctx2=c.chart.ctx;
+        ctx2.font='bold 8px IBM Plex Mono';
+        ctx2.fillStyle='#0b1f38';
+        ctx2.textAlign='left';
+        c.chart.data.datasets[0].data.forEach((v,i)=>{
+          const meta=c.chart.getDatasetMeta(0).data[i];
+          ctx2.fillText(v+'%',meta.x+4,meta.y+3);
+        });
+      }}
+    }
+  });
+}
+
+// ────────────────────────────────────────
+// SECTOR ANALYSIS PAGE
+// ────────────────────────────────────────
+function buildSectors() {
+  // Populate filter
+  const sel = document.getElementById('sectorFilter');
+  SECTOR_STATS.forEach(s=>{
+    const opt = document.createElement('option');
+    opt.value = s.sector; opt.textContent = s.sector;
+    sel.appendChild(opt);
+  });
+
+  // Bubble chart
+  new Chart(document.getElementById('sec-bubble'), {
+    type:'bubble',
+    data:{
+      datasets: SECTOR_STATS.map((s,i)=>({
+        label: s.short,
+        data:[{x:s.sanctioned, y:s.avgProgress, r:Math.max(6,Math.sqrt(s.beneficiaries/5000))}],
+        backgroundColor: s.color+'aa',
+        borderColor: s.color,
+        borderWidth:2,
+      }))
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true,position:'right',labels:{font:{size:9.5},boxWidth:10,padding:8}},
+        tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ₹${ctx.raw.x}Cr · ${ctx.raw.y}% progress`}}
+      },
+      scales:{
+        x:{title:{display:true,text:'Sanctioned (₹ Cr)',font:{size:9}},ticks:{callback:v=>'₹'+v,font:{size:9}},grid:{color:'rgba(0,0,0,0.05)'}},
+        y:{title:{display:true,text:'Avg Progress %',font:{size:9}},min:50,max:110,ticks:{callback:v=>v+'%',font:{size:9}},grid:{color:'rgba(0,0,0,0.05)'}}
+      }
+    }
+  });
+
+  // Horizontal bar
+  new Chart(document.getElementById('sec-hbar'), {
+    type:'bar',
+    data:{
+      labels: SECTOR_STATS.map(s=>s.short),
+      datasets:[
+        {label:'Sanctioned',  data:SECTOR_STATS.map(s=>s.sanctioned),  backgroundColor:'#1460aa',borderRadius:3},
+        {label:'Expenditure', data:SECTOR_STATS.map(s=>s.expenditure), backgroundColor:'#0b9b8a',borderRadius:3},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:10}},
+               tooltip:{callbacks:{label:ctx=>' ₹'+ctx.raw.toLocaleString()+' Cr'}}},
+      scales:{
+        x:{ticks:{callback:v=>'₹'+v,font:{size:9}},grid:{color:'rgba(0,0,0,0.05)'}},
+        y:{ticks:{font:{size:9}}}
+      }
+    }
+  });
+
+  // Table
+  renderSectorTable(SECTOR_STATS);
+}
+
+function renderSectorTable(data) {
+  const tbody = document.getElementById('sec-table');
+  tbody.innerHTML='';
+  data.forEach(s=>{
+    const util = s.sanctioned>0?Math.round(s.expenditure/s.sanctioned*100):0;
+    const progColor = progressColor(s.avgProgress);
+    tbody.innerHTML+=`<tr>
+      <td><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${s.color};margin-right:6px;vertical-align:middle"></span>${s.sector}</td>
+      <td>${s.count}</td>
+      <td>${s.completed}</td>
+      <td>${s.ongoing}</td>
+      <td style="font-family:var(--mono)">₹${s.sanctioned.toLocaleString()}</td>
+      <td style="font-family:var(--mono)">₹${s.released.toLocaleString()}</td>
+      <td style="font-family:var(--mono)">₹${s.expenditure.toLocaleString()}</td>
+      <td><span style="font-family:var(--mono);color:${progressColor(util)};font-weight:500">${util}%</span></td>
+      <td>
+        <div class="prog-wrap">
+          <div class="prog-track"><div class="prog-fill" style="width:${s.avgProgress}%;background:${progColor}"></div></div>
+          <span class="prog-val">${s.avgProgress}%</span>
+        </div>
+      </td>
+      <td style="font-family:var(--mono)">${fmt(s.beneficiaries)}</td>
+    </tr>`;
+  });
+}
+
+function renderSectorDetail() {
+  const val = document.getElementById('sectorFilter').value;
+  const filtered = val==='all' ? SECTOR_STATS : SECTOR_STATS.filter(s=>s.sector===val);
+  renderSectorTable(filtered);
+}
+
+// ────────────────────────────────────────
+// DEPARTMENTS PAGE
+// ────────────────────────────────────────
+function buildDepartments() {
+  const top10 = DEPT_STATS.slice(0,10);
+  const shortDept = d => d.replace('Department of ','').replace(' Department','').replace(' and ',' & ').slice(0,30);
+
+  new Chart(document.getElementById('dept-bar'), {
+    type:'bar',
+    data:{
+      labels: top10.map(d=>shortDept(d.dept)),
+      datasets:[
+        {label:'Sanctioned',  data:top10.map(d=>d.sanctioned),  backgroundColor:'#1460aa',borderRadius:3},
+        {label:'Expenditure', data:top10.map(d=>d.expenditure), backgroundColor:'#0b9b8a',borderRadius:3},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{
+        legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:10}},
+        tooltip:{callbacks:{label:ctx=>' ₹'+ctx.raw.toLocaleString()+' Cr'}}
+      },
+      scales:{
+        x:{ticks:{callback:v=>'₹'+v,font:{size:9}},grid:{color:'rgba(0,0,0,0.05)'}},
+        y:{ticks:{font:{size:9.5}}}
+      },
+      animation:{onComplete(c){
+        const ctx2=c.chart.ctx;
+        ctx2.font='bold 8.5px IBM Plex Mono';
+        ctx2.fillStyle='#fff';
+        ctx2.textAlign='left';
+        c.chart.data.datasets.forEach((ds,di)=>{
+          ds.data.forEach((v,i)=>{
+            const meta=c.chart.getDatasetMeta(di).data[i];
+            if(meta.width>40) ctx2.fillText('₹'+v,meta.x-meta.width+4,meta.y+(di===0?-4:4));
+          });
+        });
+      }}
+    }
+  });
+
+  new Chart(document.getElementById('dept-pie'), {
+    type:'pie',
+    data:{
+      labels: top10.map(d=>shortDept(d.dept)),
+      datasets:[{
+        data: top10.map(d=>d.sanctioned),
+        backgroundColor: PALETTE,
+        borderWidth:2,borderColor:'#fff'
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true,position:'bottom',labels:{font:{size:8.5},boxWidth:8,padding:6}},
+        tooltip:{callbacks:{label:ctx=>' ₹'+ctx.raw.toLocaleString()+' Cr'}}
+      }
+    }
+  });
+
+  // Table
+  const tbody = document.getElementById('dept-table');
+  DEPT_STATS.forEach((d,i)=>{
+    const util = d.sanctioned>0?Math.round(d.expenditure/d.sanctioned*100):0;
+    tbody.innerHTML+=`<tr>
+      <td>${d.dept}</td>
+      <td style="font-family:var(--mono)">${d.count}</td>
+      <td style="font-family:var(--mono)">₹${d.sanctioned.toLocaleString()}</td>
+      <td style="font-family:var(--mono)">₹${d.expenditure.toLocaleString()}</td>
+      <td><span style="font-family:var(--mono);color:${progressColor(util)};font-weight:500">${util}%</span></td>
+    </tr>`;
+  });
+}
+
+// ────────────────────────────────────────
+// BENEFICIARIES PAGE
+// ────────────────────────────────────────
+function buildBeneficiaries() {
+  new Chart(document.getElementById('ben-pie'), {
+    type:'pie',
+    data:{
+      labels: SECTOR_STATS.map(s=>s.short),
+      datasets:[{
+        data: SECTOR_STATS.map(s=>s.beneficiaries),
+        backgroundColor: SECTOR_STATS.map(s=>s.color),
+        borderWidth:2,borderColor:'#fff'
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true,position:'right',labels:{font:{size:9.5},boxWidth:10,padding:8}},
+        tooltip:{callbacks:{label:ctx=>' '+ctx.label+': '+fmt(ctx.raw)}}
+      },
+      animation:{onComplete(c){
+        const ctx2=c.chart.ctx;
+        ctx2.textAlign='center';
+        ctx2.textBaseline='middle';
+        ctx2.font='bold 9px IBM Plex Mono';
+        ctx2.fillStyle='#fff';
+        const total=c.chart.data.datasets[0].data.reduce((a,b)=>a+b,0);
+        c.chart.data.datasets[0].data.forEach((v,i)=>{
+          const meta=c.chart.getDatasetMeta(0).data[i];
+          if(v/total>0.05){
+            const {x,y}=meta.tooltipPosition();
+            ctx2.fillText(Math.round(v/total*100)+'%',x,y);
+          }
+        });
+      }}
+    }
+  });
+
+  // Efficiency bar
+  const effData = SECTOR_STATS.filter(s=>s.expenditure>0).map(s=>({
+    short:s.short,color:s.color,
+    eff: s.beneficiaries>0 ? +(s.beneficiaries/s.expenditure).toFixed(1) : 0
+  })).sort((a,b)=>b.eff-a.eff);
+
+  new Chart(document.getElementById('ben-efficiency'), {
+    type:'bar',
+    data:{
+      labels: effData.map(s=>s.short),
+      datasets:[{
+        data: effData.map(s=>s.eff),
+        backgroundColor: effData.map(s=>s.color),
+        borderRadius:4,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:ctx=>' '+ctx.raw+' people / ₹1 Cr spent'}}
+      },
+      scales:{
+        x:{ticks:{font:{size:9}},grid:{display:false}},
+        y:{ticks:{font:{size:9}},grid:{color:'rgba(0,0,0,0.05)'}}
+      },
+      animation:{onComplete(c){
+        const ctx2=c.chart.ctx;
+        ctx2.font='bold 9.5px IBM Plex Mono';
+        ctx2.fillStyle='#0b1f38';
+        ctx2.textAlign='center';
+        c.chart.data.datasets[0].data.forEach((v,i)=>{
+          const meta=c.chart.getDatasetMeta(0).data[i];
+          if(v>0) ctx2.fillText(v,meta.x,meta.y-5);
+        });
+      }}
+    }
+  });
+
+  // Horizontal bars
+  const maxB = Math.max(...SECTOR_STATS.map(s=>s.beneficiaries));
+  const hEl  = document.getElementById('ben-hbars');
+  SECTOR_STATS.sort((a,b)=>b.beneficiaries-a.beneficiaries).forEach(s=>{
+    const pct = Math.round(s.beneficiaries/maxB*100);
+    hEl.innerHTML+=`<div class="hbar-row">
+      <div class="hbar-label">${s.short}</div>
+      <div class="hbar-track"><div class="hbar-fill" style="width:${pct}%;background:${s.color}"></div></div>
+      <div class="hbar-val">${fmt(s.beneficiaries)}</div>
+    </div>`;
+  });
+}
+
+// ────────────────────────────────────────
+// ALL PROJECTS PAGE
+// ────────────────────────────────────────
+function buildProjects() {
+  const sec = document.getElementById('projSector');
+  [...new Set(PROJECTS.map(p=>p.sector))].forEach(s=>{
+    const opt=document.createElement('option');
+    opt.value=s;opt.textContent=s;sec.appendChild(opt);
+  });
+  renderProjects(PROJECTS);
+}
+
+function filterProjects() {
+  const q    = document.getElementById('projSearch').value.toLowerCase();
+  const sec  = document.getElementById('projSector').value;
+  const stat = document.getElementById('projStatus').value;
+  const f = PROJECTS.filter(p=>
+    (!q || p.name.toLowerCase().includes(q) || p.dept.toLowerCase().includes(q)) &&
+    (!sec  || p.sector===sec) &&
+    (!stat || p.status===stat)
+  );
+  renderProjects(f);
+}
+
+function renderProjects(data) {
+  document.getElementById('projCount').textContent = data.length+' projects';
+  const tbody = document.getElementById('proj-tbody');
+  tbody.innerHTML='';
+  data.forEach(p=>{
+    const col = progressColor(p.progress);
+    const pill = p.delayed
+      ? `<span class="pill pill-delayed">Delayed</span>`
+      : p.status==='Completed'
+        ? `<span class="pill pill-completed">Completed</span>`
+        : `<span class="pill pill-ongoing">Ongoing</span>`;
+    tbody.innerHTML+=`<tr>
+      <td style="font-family:var(--mono);color:var(--muted)">${p.id}</td>
+      <td style="max-width:220px;font-size:11px">${p.name}</td>
+      <td><span style="font-size:10px;padding:2px 7px;background:${SECTOR_COLORS[p.sector]}22;color:${SECTOR_COLORS[p.sector]};border-radius:4px;font-family:var(--mono)">${SECTORS_SHORT[p.sector]}</span></td>
+      <td style="font-size:10.5px;max-width:160px">${p.dept}</td>
+      <td style="font-family:var(--mono)">₹${p.sanctioned.toLocaleString()}</td>
+      <td style="font-family:var(--mono)">₹${p.released.toLocaleString()}</td>
+      <td style="font-family:var(--mono)">₹${p.expenditure.toLocaleString()}</td>
+      <td>
+        <div class="prog-wrap">
+          <div class="prog-track"><div class="prog-fill" style="width:${p.progress}%;background:${col}"></div></div>
+          <span class="prog-val">${p.progress}%</span>
+        </div>
+      </td>
+      <td>${pill}</td>
+      <td style="font-family:var(--mono);font-size:10px;white-space:nowrap">${p.end_eot}</td>
+      <td style="font-family:var(--mono)">${fmt(p.beneficiaries)}</td>
+    </tr>`;
+  });
+}
+
+// ────────────────────────────────────────
+// DELAYED PAGE
+// ────────────────────────────────────────
+function buildDelayed() {
+  document.getElementById('dl-count').textContent    = DELAYED.length;
+  const budget = DELAYED.reduce((s,p)=>s+p.sanctioned,0).toFixed(0);
+  document.getElementById('dl-budget').textContent   = '₹'+Number(budget).toLocaleString()+' Cr';
+  const avgP = (DELAYED.reduce((s,p)=>s+p.progress,0)/DELAYED.length).toFixed(1);
+  document.getElementById('dl-avgprog').textContent  = avgP+'%';
+  document.getElementById('dl-sectors').textContent  = new Set(DELAYED.map(p=>p.sector)).size;
+
+  const tbody = document.getElementById('dl-tbody');
+  DELAYED.sort((a,b)=>a.progress-b.progress).forEach(p=>{
+    tbody.innerHTML+=`<tr>
+      <td style="font-family:var(--mono);color:var(--muted)">${p.id}</td>
+      <td style="max-width:240px;font-size:11px">${p.name}</td>
+      <td><span style="font-size:10px;padding:2px 7px;background:${SECTOR_COLORS[p.sector]}22;color:${SECTOR_COLORS[p.sector]};border-radius:4px;font-family:var(--mono)">${SECTORS_SHORT[p.sector]}</span></td>
+      <td style="font-family:var(--mono)">₹${p.sanctioned.toLocaleString()}</td>
+      <td>
+        <div class="prog-wrap">
+          <div class="prog-track"><div class="prog-fill" style="width:${p.progress}%;background:${progressColor(p.progress)}"></div></div>
+          <span class="prog-val">${p.progress}%</span>
+        </div>
+      </td>
+      <td style="font-family:var(--mono);color:var(--red);font-size:10.5px">${p.end_eot}</td>
+      <td><span class="pill pill-delayed">Overdue</span></td>
+    </tr>`;
+  });
+}
+
+// ────────────────────────────────────────
+// DATES
+// ────────────────────────────────────────
+const now = new Date();
+const dateStr = now.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+document.getElementById('topbarDate').textContent = dateStr;
+document.getElementById('sidebarDate').textContent = dateStr;
+
+// ────────────────────────────────────────
+// INIT OVERVIEW
+// ────────────────────────────────────────
+buildCharts('overview');
+chartsBuilt['overview'] = true;
+</script>
+</body>
+</html>
